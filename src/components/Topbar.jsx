@@ -9,7 +9,7 @@ const formatTime = (seconds) => {
 
 const Topbar = ({ username }) => {
   const { currentTrack, isPlaying, togglePlay, audioRef } = useContext(PlayerContext);
-  const [volume, setVolume] = useState(0.7);
+  const [volume, setVolume] = useState(0.6);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
@@ -42,74 +42,56 @@ const Topbar = ({ username }) => {
   };
 
   return (
-    <div className="w-full bg-white border-b px-6 py-3 flex items-center justify-between shadow z-50">
-      {/* Лого */}
-      <div className="text-2xl font-bold text-red-600 whitespace-nowrap">VibeTunes</div>
-
-      {/* Центр — плеер */}
-      {currentTrack ? (
-        <div className="flex flex-col items-center w-full max-w-2xl mx-4">
-          {/* Трекбар */}
-          <div className="flex items-center space-x-2 w-full text-xs text-gray-500 mb-1">
-            <span className="w-10 text-right">{formatTime(currentTime)}</span>
-            <input
-              type="range"
-              min={0}
-              max={duration}
-              step="0.1"
-              value={currentTime}
-              onChange={handleSeek}
-              className="w-full accent-red-600"
-            />
-            <span className="w-10">{formatTime(duration)}</span>
-          </div>
-
-          {/* Контролы + инфо */}
-          <div className="flex items-center space-x-4">
-            {/* Кнопки */}
-            <div className="flex items-center space-x-2 text-xl text-gray-700">
-              <button>🔀</button>
-              <button>⏮</button>
-              <button onClick={togglePlay}>
-                {isPlaying ? "⏸️" : "▶️"}
-              </button>
-              <button>⏭</button>
-              <button>🔁</button>
-            </div>
-
-            {/* Инфо о треке */}
-            <div className="flex items-center space-x-3 bg-gray-100 px-3 py-1 rounded">
-              <img
-                src={currentTrack.cover || "https://placehold.co/40x40"}
-                className="w-10 h-10 rounded"
-                alt="cover"
-              />
-              <div className="flex flex-col overflow-hidden max-w-[200px]">
-                <span className="font-semibold text-sm truncate">{currentTrack.title}</span>
-                <span className="text-xs text-gray-500 truncate">
-                  {currentTrack.artist} {currentTrack.album ? `— ${currentTrack.album}` : ""}
-                </span>
-              </div>
-              {currentTrack.preview && (
-                <span className="ml-2 text-xs bg-red-600 text-white px-2 py-0.5 rounded">PREVIEW</span>
-              )}
-              <audio
-                src={currentTrack.url}
-                ref={audioRef}
-                autoPlay
-                onEnded={() => console.log("Трек завершён")}
-              />
-            </div>
-          </div>
+    <div className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-md bg-white/30 text-gray-800 px-6 py-3 flex items-center justify-between shadow-md font-sans">
+      {/* Инфо о треке */}
+      <div className="flex items-center space-x-4">
+        <img
+          src={currentTrack?.cover || "https://placehold.co/60x60"}
+          alt="cover"
+          className="w-14 h-14 rounded shadow"
+        />
+        <div className="flex flex-col max-w-[200px] overflow-hidden">
+          <span className="font-semibold truncate">{currentTrack?.title || "Трек не выбран"}</span>
+          <span className="text-sm text-gray-500 truncate">
+            {currentTrack?.artist || "Неизвестный артист"}
+          </span>
         </div>
-      ) : (
-        <div className="text-sm text-gray-400 text-center w-full">Нет трека для воспроизведения</div>
-      )}
+      </div>
 
-      {/* Громкость и ник */}
-      <div className="flex items-center space-x-3 whitespace-nowrap">
-        <div className="flex items-center space-x-2 w-24">
-          <span>🔈</span>
+      {/* Контролы и полоса */}
+      <div className="flex flex-col items-center w-full max-w-2xl px-6">
+        {/* Кнопки */}
+        <div className="flex items-center space-x-4 mb-1 text-xl">
+          <button className="hover:scale-110 transition">⏮</button>
+          <button
+            onClick={togglePlay}
+            className="bg-pink-600 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md hover:bg-pink-700 transition"
+          >
+            {isPlaying ? "⏸" : "▶️"}
+          </button>
+          <button className="hover:scale-110 transition">⏭</button>
+        </div>
+
+        {/* Полоса воспроизведения */}
+        <div className="flex items-center space-x-3 w-full text-xs text-gray-700">
+          <span className="w-10 text-right">{formatTime(currentTime)}</span>
+          <input
+            type="range"
+            min={0}
+            max={duration}
+            step="0.1"
+            value={currentTime}
+            onChange={handleSeek}
+            className="w-full accent-pink-600"
+          />
+          <span className="w-10">{formatTime(duration)}</span>
+        </div>
+      </div>
+
+      {/* Громкость и имя */}
+      <div className="flex items-center space-x-4 w-40">
+        <div className="flex items-center space-x-2 w-full">
+          <span className="text-lg">🔊</span>
           <input
             type="range"
             min="0"
@@ -117,11 +99,20 @@ const Topbar = ({ username }) => {
             step="0.01"
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-full accent-red-600"
+            className="w-full accent-pink-600"
           />
         </div>
-        <div className="text-sm font-semibold text-gray-700">{username}</div>
       </div>
+
+      {/* Аудио */}
+      {currentTrack?.url && (
+        <audio
+          src={currentTrack.url}
+          ref={audioRef}
+          autoPlay
+          onEnded={() => console.log("Трек завершён")}
+        />
+      )}
     </div>
   );
 };

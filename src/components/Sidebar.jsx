@@ -1,58 +1,100 @@
-import React from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth, db } from "../firebase/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { FiLogOut } from "react-icons/fi";
+import {
+  FaMusic,
+  FaHome,
+  FaChartBar,
+  FaHeart,
+  FaUpload,
+  FaListAlt,
+} from "react-icons/fa";
 
-const Sidebar = ({ role = "listener" }) => {
+export default function Sidebar() {
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Определим базовый префикс
-  const base = role === "musician" ? "/musician" : "/listener";
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (userData) => {
+      if (userData) {
+        setUser(userData);
+        const userRef = doc(db, "users", userData.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          setRole(userSnap.data().role);
+        }
+      } else {
+        setUser(null);
+        setRole("");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/login");
+  };
+
+  const isActive = (path) => location.pathname === path;
+
+  const navItems = {
+    listener: [
+      { path: "/listener", label: "Home", icon: <FaHome /> },
+      { path: "/listener/playlists", label: "Playlists", icon: <FaListAlt /> },
+      { path: "/listener/favorites", label: "My Playlist", icon: <FaHeart /> },
+      { path: "/listener/songs", label: "Songs", icon: <FaMusic /> },
+      { path: "/listener/charts", label: "Charts", icon: <FaChartBar /> },
+    ],
+    musician: [
+      { path: "/musician", label: "Home", icon: <FaHome /> },
+      { path: "/musician/my-music", label: "My Musics", icon: <FaMusic /> },
+      { path: "/musician/analytics", label: "Analytics", icon: <FaChartBar /> },
+      { path: "/musician/upload", label: "Upload", icon: <FaUpload /> },
+    ],
+  };
+
+  const links = role && navItems[role];
 
   return (
-    <div className="w-64 bg-white border-r p-6 flex flex-col">
-      <h1 className="text-2xl font-semibold mb-6">Music</h1>
-      <nav className="flex flex-col space-y-3">
-        <a
-          href={`${base}`}
-          className={`flex items-center space-x-3 font-semibold ${
-            location.pathname === base ? "text-black" : "text-gray-600"
-          }`}
-        >
-          <i className="fas fa-home"></i>
-          <span>Home</span>
-        </a>
+    <div className="w-64 h-screen bg-gradient-to-b from-[#c1f5ff] via-[#d8c6ff] to-[#f7c8ff] p-6 shadow-xl text-gray-800 font-inter">
+      <h1 className="text-3xl font-bold mb-8 tracking-wide text-center">VibeTunes</h1>
 
-        <a
-          href={`${base}/my-music`}
-          className={`flex items-center space-x-3 font-semibold ${
-            location.pathname.includes("my-music") ? "text-black" : "text-gray-600"
-          }`}
-        >
-          <i className="fas fa-music"></i>
-          <span>My Musics</span>
-        </a>
+      {user && role && (
+        <>
+          <div className="mb-6 text-center">
+            <p className="text-lg font-medium">👤 {user.email}</p>
+            <p className="text-sm italic text-gray-600 capitalize">{role}</p>
+          </div>
 
-        <a
-          href={`${base}/analytics`}
-          className={`flex items-center space-x-3 font-semibold ${
-            location.pathname.includes("analytics") ? "text-black" : "text-gray-600"
-          }`}
-        >
-          <i className="fas fa-chart-line"></i>
-          <span>Analytics</span>
-        </a>
+          <nav className="flex flex-col space-y-3">
+            {links.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`flex items-center gap-3 px-4 py-2 rounded-md hover:bg-white hover:text-black transition ${
+                  isActive(link.path) ? "bg-white text-black font-semibold" : ""
+                }`}
+              >
+                {link.icon}
+                {link.label}
+              </Link>
+            ))}
+          </nav>
 
-        <a
-          href={`${base}/charts`}
-          className={`flex items-center space-x-3 font-semibold ${
-            location.pathname.includes("charts") ? "text-black" : "text-gray-600"
-          }`}
-        >
-          <i className="fas fa-trophy"></i>
-          <span>Charts</span>
-        </a>
-      </nav>
+          <button
+            onClick={handleLogout}
+            className="mt-10 flex items-center gap-2 px-4 py-2 rounded-md bg-white text-red-600 hover:bg-red-100 transition w-full"
+          >
+            <FiLogOut /> Sign Out
+          </button>
+        </>
+      )}
     </div>
   );
-};
-
-export default Sidebar;
+}
